@@ -1,8 +1,23 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+// Android only exposes sdk.dir from local.properties to the build, so the
+// Maps key is loaded explicitly. This keeps the key out of version control.
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
+}
+
+val googleMapsApiKey: String =
+    localProperties.getProperty("GOOGLE_MAPS_API_KEY")
+        ?: System.getenv("GOOGLE_MAPS_API_KEY")
+        ?: "YOUR_GOOGLE_MAPS_API_KEY"
 
 android {
     namespace = "ph.cabadbaran.evacuation_center_locator"
@@ -28,11 +43,8 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
-        // The API key is read from android/local.properties or
-        // gradle.properties and is not committed to source control.
-        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] =
-            (project.findProperty("GOOGLE_MAPS_API_KEY") as String?)
-                ?: "YOUR_GOOGLE_MAPS_API_KEY"
+        // Injected into AndroidManifest.xml for the native Maps SDK.
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = googleMapsApiKey
     }
 
     buildTypes {
